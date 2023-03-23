@@ -36,9 +36,21 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
+  diagnostics:
+    docker:
+      - image: amazon/aws-cli
+      # Docker image here that supports AWS CLI
+    steps:
+      - run:
+          name: Diags
+          command: |
+            pwd
+            ls -la . ..
+            printenv
       # Here's where you will add some code to rollback on failure   
 workflows:
   default:
     jobs:
+      - diagnostics
       - deploy-infrastructure          
           
