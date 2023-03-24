@@ -87,7 +87,7 @@ jobs:
       - add_ssh_keys:
           fingerprints: ["02:e5:d6:ad:c5:5e:b3:c5:8e:60:a4:27:af:ce:ad:7b"] # You can get this ID in the section where you registered the SSH Key
       - attach_workspace:
-          at: ~/
+          at: .circleci/ansible
       - run:
           name: Install dependencies
           command: |
@@ -96,7 +96,7 @@ jobs:
       - run:
           name: Configure server
           command: |
-            ansible-playbook -i ~/inventory.txt deploy-backend.yml
+            ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/deploy-backend.yml
 
   diagnostics:
     docker:
