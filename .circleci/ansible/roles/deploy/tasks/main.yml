@@ -18,6 +18,14 @@
     state: present
     update_cache: true
 
+- name: "install npm dependencies"
+  become: true
+  yum:
+    name:
+      - npm      
+    state: present
+    update_cache: true
+
 - name: "install pm2"
   become: true
   npm:
