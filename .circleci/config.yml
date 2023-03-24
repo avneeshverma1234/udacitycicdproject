@@ -8,19 +8,19 @@ jobs:
       - checkout          
   deploy-infrastructure:
     docker:
-      - image: circleci/node:13.8.0
+      - image: amazon/aws-cli
       # Docker image here that supports AWS CLI amazon/aws-cli
     steps:
-      # Checkout code from git
-      - checkout
-      #- run: 
-      #    name: Install Git
-       #   command: |
-       #      yum update -y && yum install git -y
+      # Checkout code from git      
+      - run: 
+          name: Install Git
+          command: |
+            yum update -y && yum install git -y
       - run:
           name: check git version
           command: |
             git --version
+      - checkout
       - run:
           name: Ensure back-end infrastructure exists
           command: |
