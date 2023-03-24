@@ -1,6 +1,11 @@
 version: 2.1
 
 jobs:
+  checkoutcode:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout          
   deploy-infrastructure:
     docker:
       - image: amazon/aws-cli
@@ -8,6 +13,14 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
+      - run: 
+          name: Install Git
+          command: |
+            yum update -y && yum install git -y
+      - run:
+          name: check git version
+          command: |
+            git --version
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -52,6 +65,6 @@ jobs:
 workflows:
   default:
     jobs:
-      - diagnostics
+      #- diagnostics
       - deploy-infrastructure          
           
