@@ -1,5 +1,24 @@
 version: 2.1
 
+commands:
+  destroy_frontend_environment:
+    steps:
+      - run:
+          name: Destroy Frontend environment
+          # ${CIRCLE_WORKFLOW_ID} is a Built-in environment variable 
+          # ${CIRCLE_WORKFLOW_ID:0:5} takes the first 5 chars of the variable CIRCLE_CI_WORKFLOW_ID 
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udacityproj3frontend-${CIRCLE_WORKFLOW_ID:0:5}
+  destroy_backend_environment:
+    steps:
+      - run:
+          name: Destroy Backend environment
+          # ${CIRCLE_WORKFLOW_ID} is a Built-in environment variable 
+          # ${CIRCLE_WORKFLOW_ID:0:5} takes the first 5 chars of the variable CIRCLE_CI_WORKFLOW_ID 
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udacityproj3backend-${CIRCLE_WORKFLOW_ID:0:5}
 jobs:
   checkoutcode:
     docker:
@@ -29,7 +48,8 @@ jobs:
               --tags project=udacitycdbackend \
               --stack-name udacityproj3backend-${CIRCLE_WORKFLOW_ID:0:5} \
               --region us-east-1 \
-              --parameter-overrides ID="backend-${CIRCLE_WORKFLOW_ID:0:5}"              
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:5}"      
+      - destroy_backend_environment        
       - run:
           name: Ensure front-end infrastructure exist
           command: |
@@ -38,20 +58,29 @@ jobs:
               --tags project=udacitycdfrontend \
               --stack-name udacityproj3frontend-${CIRCLE_WORKFLOW_ID:0:5} \
               --region us-east-1 \
-              --parameter-overrides ID="frontend-${CIRCLE_WORKFLOW_ID:0:5}"               
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:5}"               
+      - destroy_frontend_environment
       - run:
           name: Add back-end ip to ansible inventory
           command: |
             # Your code here
-            exit 1
+            aws ec2 describe-instances \
+            --filters tag:"backend-${CIRCLE_WORKFLOW_ID:0:5}"
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --output text >> inventory.txt            
       - persist_to_workspace:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
+      - run:
+          name: display inventory file
+          command: |
+            cat project/.circleci/ansible/inventory.txt        
+
   diagnostics:
     docker:
       - image: amazon/aws-cli
-      # Docker image here that supports AWS CLI
+      # Docker image here that supports AWS CLI #- run: echo "THIS IS A SAMPLE TEXT" > ~/output.txt
     steps:
       - run:
           name: Diags
