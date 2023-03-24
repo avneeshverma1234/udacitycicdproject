@@ -39,6 +39,10 @@ jobs:
           name: check git version
           command: |
             git --version
+      - run:
+          name: Install tar utility
+          command: |
+            yum install -y tar gzip
       - checkout
       - run:
           name: Ensure back-end infrastructure exists
@@ -75,6 +79,22 @@ jobs:
           name: display inventory file
           command: |
             cat project/.circleci/ansible/inventory.txt        
+  deploy-backend:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["02:e5:d6:ad:c5:5e:b3:c5:8e:60:a4:27:af:ce:ad:7b"] # You can get this ID in the section where you registered the SSH Key
+      - run:
+          name: Install dependencies
+          command: |
+            # install the dependencies needed for your playbook
+            apk add --update ansible 
+      - run:
+          name: Configure server
+          command: |
+            ansible-playbook -i inventory.txt main4.yml
 
   diagnostics:
     docker:
@@ -93,4 +113,4 @@ workflows:
     jobs:
       #- diagnostics
       - deploy-infrastructure          
-          
+      - configure_infrastructure  
