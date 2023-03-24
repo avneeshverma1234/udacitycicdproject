@@ -28,7 +28,7 @@ jobs:
               --template-file .circleci/files/backend.yml \
               --tags project=udacitycdbackend \
               --stack-name udacityproj3backend-${CIRCLE_WORKFLOW_ID:0:5} \
-              --region us-east-1
+              --region us-east-1 \
               --parameter-overrides ID="backend-${CIRCLE_WORKFLOW_ID:0:5}"              
       - run:
           name: Ensure front-end infrastructure exist
@@ -37,8 +37,8 @@ jobs:
               --template-file .circleci/files/frontend.yml \
               --tags project=udacitycdfrontend \
               --stack-name udacityproj3frontend-${CIRCLE_WORKFLOW_ID:0:5} \
-              --region us-east-1
-              --parameter-overrides ID="frontend-${CIRCLE_WORKFLOW_ID:0:5}"                
+              --region us-east-1 \
+              --parameter-overrides ID="frontend-${CIRCLE_WORKFLOW_ID:0:5}"               
       - run:
           name: Add back-end ip to ansible inventory
           command: |
