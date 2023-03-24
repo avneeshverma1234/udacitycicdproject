@@ -113,4 +113,5 @@ workflows:
     jobs:
       #- diagnostics
       - deploy-infrastructure          
-      - configure_infrastructure  
+      - configure_infrastructure:
+          requires: [deploy-infrastructure] 
