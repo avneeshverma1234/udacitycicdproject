@@ -79,7 +79,7 @@ jobs:
           name: display inventory file
           command: |
             cat project/.circleci/ansible/inventory.txt        
-  deploy-backend:
+  configure_infrastructure:
     docker:
       - image: python:3.7-alpine3.11
     steps:
