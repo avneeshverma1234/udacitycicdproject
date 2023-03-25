@@ -273,7 +273,7 @@ jobs:
             npm install
             npm run build
             cd dist
-            aws s3 sync . s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:5}" --delete
+            aws s3 sync . s3://udapeople-419aa  --delete
       #- destroy_frontend_environment
       #- destroy_backend_environment
       #- destroy_cloudfront_environment
