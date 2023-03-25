@@ -5,12 +5,10 @@ commands:
   destroy_frontend_environment:
     steps:
       - run:
-          name: Destroy Frontend environment
-          # ${CIRCLE_WORKFLOW_ID} is a Built-in environment variable 
-          # ${CIRCLE_WORKFLOW_ID:0:5} takes the first 5 chars of the variable CIRCLE_CI_WORKFLOW_ID 
+          name: Destroy Frontend environment          
           when: on_fail
           command: |
-            aws cloudformation delete-stack --stack-name udacityproj3frontend-${CIRCLE_WORKFLOW_ID:0:5}
+           aws cloudformation delete-stack --stack-name udacityproj3frontend-${CIRCLE_WORKFLOW_ID:0:5}
   destroy_backend_environment:
     steps:
       - run:
@@ -229,9 +227,9 @@ jobs:
           name: Configure server with ansible
           command: |
             ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
-      - destroy_frontend_environment
-      - destroy_backend_environment
-      - destroy_cloudfront_environment
+      #- destroy_frontend_environment
+      #- destroy_backend_environment
+      #- destroy_cloudfront_environment
   
   run-migrations:
     docker:
@@ -244,9 +242,9 @@ jobs:
             cd backend
             npm i
             npm run migrations
-      - destroy_frontend_environment
-      - destroy_backend_environment
-      - destroy_cloudfront_environment      
+      #- destroy_frontend_environment
+      #- destroy_backend_environment
+      #- destroy_cloudfront_environment      
   deploy-frontend:
     docker:
       - image: python:3.7-alpine3.11
@@ -276,9 +274,9 @@ jobs:
             npm run build
             cd dist
             aws s3 sync . s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:5}" --delete
-      - destroy_frontend_environment
-      - destroy_backend_environment
-      - destroy_cloudfront_environment
+      #- destroy_frontend_environment
+      #- destroy_backend_environment
+      #- destroy_cloudfront_environment
       - revert-migration
   
   deploy-backend:
@@ -313,9 +311,9 @@ jobs:
             mkdir -p ../.circleci/ansible/roles/deploy/files
             cd ../.circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
-      - destroy_frontend_environment
-      - destroy_backend_environment
-      - destroy_cloudfront_environment
+      #- destroy_frontend_environment
+      #- destroy_backend_environment
+      #- destroy_cloudfront_environment
       - revert-migration
     
   smoke-test:
@@ -395,18 +393,18 @@ workflows:
   #        context: SlackContext
   default:
     jobs:      
-      - build-frontend
-      - build-backend
-      - test-frontend:
-          requires: [build-frontend]
-      - test-backend:
-          requires: [build-backend]
-      - scan-frontend:
-          context: SlackContext
-          requires: [test-frontend]
-      - scan-backend:
-          context: SlackContext
-          requires: [test-backend]
+    #  - build-frontend
+    #  - build-backend
+    #  - test-frontend:
+    #      requires: [build-frontend]
+    #  - test-backend:
+    #      requires: [build-backend]
+    #  - scan-frontend:
+    #      context: SlackContext
+    #      requires: [test-frontend]
+    #  - scan-backend:
+    #      context: SlackContext
+    #      requires: [test-backend]
       - deploy-infrastructure:
           requires: [scan-frontend, scan-backend]
           filters:
@@ -414,7 +412,7 @@ workflows:
               only:
                 - main
       - configure-infrastructure:
-          requires: [deploy-infrastructure]
+         requires: [deploy-infrastructure]
       - run-migrations:
           requires: [configure-infrastructure]
       - deploy-frontend:
