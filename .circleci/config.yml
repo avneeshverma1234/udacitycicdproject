@@ -27,10 +27,9 @@ jobs:
       - checkout
       - restore_cache:
           keys: [frontend-build]
-      - run: npm i
-      - run: npm run lint
+      - run: npm i ./frontend      
       - save_cache:
-          paths: [frontend/node_modules]
+          paths: [node_modules]
           key: frontend-build
 
   build-backend:
@@ -40,10 +39,9 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
-      - run: npm i
-      - run: npm run lint
+      - run: npm i ./backend      
       - save_cache:
-          paths: [backend/node_modules]
+          paths: [node_modules]
           key: backend-build
 
   checkoutcode:
