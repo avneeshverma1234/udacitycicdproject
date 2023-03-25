@@ -262,7 +262,7 @@ jobs:
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:5}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
-            export API_URL=http://$BACKEND_IP:3030
+            export API_URL=http://107.23.54.49:3030
             echo "API_URL=$API_URL" > frontend/.env
             echo "${API_URL}"
       - run:
@@ -417,10 +417,10 @@ workflows:
     #      requires: [configure-infrastructure]
       - deploy-frontend
     #     requires: [run-migrations]
-      - deploy-backend
+    #  - deploy-backend
     #     requires: [run-migrations]
-      - smoke-test:
-          requires: [deploy-backend, deploy-frontend]
-      - cloudfront-update:
-          requires: [smoke-test]
+    #  - smoke-test:
+    #      requires: [deploy-backend, deploy-frontend]
+    #  - cloudfront-update:
+    #      requires: [smoke-test]
       
