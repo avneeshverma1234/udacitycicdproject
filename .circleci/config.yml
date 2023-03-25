@@ -78,6 +78,7 @@ jobs:
             path: ~/udacitycicd
         - restore_cache:
             keys: [backend-build1]
+        - run: npm audit fix --audit-level=critical --force
         - run: npm audit --audit-level=critical
 
   scan-frontend:
@@ -89,6 +90,7 @@ jobs:
            path: ~/udacitycicd
         - restore_cache:
             keys: [frontend-build1]
+        - run: npm audit fix --audit-level=critical --force
         - run: npm audit --audit-level=critical
 
   checkoutcode:
