@@ -123,8 +123,8 @@ jobs:
             path: ~/udacitycicd
         - restore_cache:
             keys: [backend-build1]
-        - run: npm audit fix --audit-level=critical --force
-        - run: npm audit --audit-level=critical
+        #- run: npm audit fix --audit-level=critical --force
+        #- run: npm audit --audit-level=critical
         - slack/notify:            
             event: fail
             template: basic_fail_1
@@ -137,8 +137,8 @@ jobs:
            path: ~/udacitycicd
         - restore_cache:
             keys: [frontend-build1]
-        - run: npm audit fix --audit-level=critical --force
-        - run: npm audit --audit-level=critical
+        #- run: npm audit fix --audit-level=critical --force
+        #- run: npm audit --audit-level=critical
         - slack/notify:            
             event: fail
             template: basic_fail_1
@@ -397,14 +397,14 @@ workflows:
     jobs:      
       - build-frontend
       - build-backend
-      #- test-frontend:
-      #    requires: [build-frontend]
-      #- test-backend:
-      #    requires: [build-backend]
-      #- scan-frontend:
-      #    requires: [test-frontend]
-      #- scan-backend:
-      #    requires: [test-backend]
+      - test-frontend:
+          requires: [build-frontend]
+      - test-backend:
+          requires: [build-backend]
+      - scan-frontend:
+          requires: [test-frontend]
+      - scan-backend:
+          requires: [test-backend]
       - deploy-infrastructure:
           requires: [scan-frontend, scan-backend]
           filters:
