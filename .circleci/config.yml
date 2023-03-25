@@ -1,5 +1,6 @@
 version: 2.1
-
+orbs:
+  slack: circleci/slack@4.1
 commands:
   destroy_frontend_environment:
     steps:
@@ -20,6 +21,29 @@ commands:
           command: |
             aws cloudformation delete-stack --stack-name udacityproj3backend-${CIRCLE_WORKFLOW_ID:0:5}
 jobs:
+
+  notify:
+    docker:
+      - image: 'cimg/base:stable'
+    steps:
+      - slack/notify:
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "plain_text",
+                      "text": "*This is a text notification*",
+                      "emoji": true
+                    }
+                  ]
+                }
+              ]
+            }
+          event: always
+
   build-frontend:
     working_directory: ~/udacitycicd/frontend
     docker:
@@ -184,6 +208,10 @@ jobs:
             printenv
       # Here's where you will add some code to rollback on failure   
 workflows:
+  send-notification:
+    jobs:
+      - notify:
+          context: SlackContext
   default:
     jobs:      
       - build-frontend
