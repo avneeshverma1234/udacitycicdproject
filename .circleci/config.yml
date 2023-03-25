@@ -14,12 +14,20 @@ commands:
   destroy_backend_environment:
     steps:
       - run:
-          name: Destroy Backend environment
-          # ${CIRCLE_WORKFLOW_ID} is a Built-in environment variable 
-          # ${CIRCLE_WORKFLOW_ID:0:5} takes the first 5 chars of the variable CIRCLE_CI_WORKFLOW_ID 
+          name: Destroy Backend environment          
           when: on_fail
           command: |
-            aws cloudformation delete-stack --stack-name udacityproj3backend-${CIRCLE_WORKFLOW_ID:0:5}
+            aws cloudformation delete-stack --stack-name udacityproj3backend-${CIRCLE_WORKFLOW_ID:0:5} 
+  
+  destroy_cloudfront_environment:
+    steps:
+      - run:
+          name: Destroy cloudfront environment          
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udacityproj3cloudfront-${CIRCLE_WORKFLOW_ID:0:5}
+
+           
 jobs:
 
   notify:
@@ -141,7 +149,7 @@ jobs:
           command: |
             git --version
       - run:
-          name: Install tar utility
+          name: Install tar and gzip utility
           command: |
             yum install -y tar gzip
       - checkout
@@ -164,7 +172,7 @@ jobs:
               --stack-name udacityproj3frontend-${CIRCLE_WORKFLOW_ID:0:5} \
               --region us-east-1 \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:5}"               
-      - destroy_frontend_environment
+      - destroy_frontend_environment      
       - run:
           name: Add back-end ip to ansible inventory
           command: |            
@@ -172,6 +180,16 @@ jobs:
             --filters  Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:5}" \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --output text >> .circleci/ansible/inventory.txt           
+      - run:
+          name: Ensure CloudFront infrastructure exist
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --tags project=udacitycdcloudfront \
+              --stack-name udacityproj3cloudfront-${CIRCLE_WORKFLOW_ID:0:5} \
+              --region us-east-1 \
+              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:5}-avudaproj3cicd"               
+      - destroy_cloudfront_environment
       - persist_to_workspace:
           root: .circleci/ansible
           paths:
@@ -191,14 +209,160 @@ jobs:
           at: .circleci/ansible
       - run:
           name: Install dependencies
-          command: |
-            # install the dependencies needed for your playbook
-            apk add --update ansible 
+          command: |            
+            apk add --update tar gzip ansible nodejs npm curl            
+            pip install awscli
       - run:
-          name: Configure server
+          name: Configure server with ansible
           command: |
-            ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/deploy-backend.yml
-
+            ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
+      - destroy_frontend_environment
+      - destroy_backend_environment
+      - destroy_cloudfront_environment
+  
+  run-migrations:
+    docker:
+      - image: circleci/node
+    steps:
+      - checkout
+      - run:
+          name: Run DB Migration
+          command: |
+            cd backend
+            npm i
+            npm run migrations
+      - destroy_frontend_environment
+      - destroy_backend_environment
+      - destroy_cloudfront_environment      
+  deploy-frontend:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip ansible nodejs npm curl
+            pip install awscli
+      - run:
+          name: Get backend url
+          command: |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:5}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            export API_URL=http://$BACKEND_IP:3030
+            echo "API_URL=$API_URL" > frontend/.env
+            echo "${API_URL}"
+      - run:
+          name: Deploy frontend objects
+          command: |
+            npm install webpack-dev-server -g
+            cd frontend
+            npm install
+            npm run build
+            cd dist
+            aws s3 sync . s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:5}" --delete
+      - destroy_frontend_environment
+      - destroy_backend_environment
+      - destroy_cloudfront_environment
+      - revert-migration
+  
+  deploy-backend:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["02:e5:d6:ad:c5:5e:b3:c5:8e:60:a4:27:af:ce:ad:7b"]
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip ansible nodejs npm curl
+            pip install awscli
+      - run:
+          name: Build and deploy backend (remove node modules)
+          no_output_timeout: 30m
+          command: |
+            cd backend            
+            npm i
+            npm run build
+            echo "List of contents before deleting: "
+            ls -a
+            echo "----------------------------------------"
+            rm -rf node_modules 
+            rm -rf dist
+            rm -rf test
+            rm README.md 
+            echo "List of files and dirs that will be sent to ansible: "
+            ls -a
+            echo "----------------------------------------"
+            mkdir -p ../.circleci/ansible/roles/deploy/files
+            cd ../.circleci/ansible
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      - destroy_frontend_environment
+      - destroy_backend_environment
+      - destroy_cloudfront_environment
+      - revert-migration
+    
+  smoke-test:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update curl
+            pip install awscli
+      - run:
+          name: Smoke test backend
+          command: |
+            BACKEND_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:5}" \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --output text)
+            echo "${BACKEND_IP}"
+            curl "http://${BACKEND_IP}:3030/api/status"
+      - run:
+          name: Smoke test frontend
+          command: |
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID::0:5}.s3-website-us-east-1.amazonaws.com/#/employees"
+            if curl -s ${URL} | grep "Welcome"
+            then
+              return 0
+            else
+              return 1
+            fi
+  cloudfront-update:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["02:e5:d6:ad:c5:5e:b3:c5:8e:60:a4:27:af:ce:ad:7b"]
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update nodejs npm curl
+            pip install awscli
+      - run:
+          name: Promote CloudFront distribution and clean up old resources
+          command: |
+            export OldWorkflowID=$(aws cloudformation \
+              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+              --no-paginate --output text)
+            export STACKS=$(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+              --stack-status-filter CREATE_COMPLETE --no-paginate --output text)
+            echo Old Workflow Id: "$OldWorkflowID"
+            echo "$STACKS[*]"
+            if echo "$STACKS[*]" | grep -Eq "$OldWorkflowID" 
+            then
+              echo "${OldWorkflowID}"
+              echo "This is the bucket: "
+              echo udapeople-${OldWorkflowID}
+              echo "This is the bucket url: "
+              echo "s3://udapeople-${OldWorkflowID}"
+            fi            
   diagnostics:
     docker:
       - image: amazon/aws-cli
@@ -218,24 +382,32 @@ workflows:
   #        context: SlackContext
   default:
     jobs:      
-      - build-frontend:
-          context: SlackContext
-      - build-backend:
-          context: SlackContext
-      - test-frontend:
-          requires: [build-frontend] 
-          context: SlackContext
-      - test-backend:
-          requires: [build-backend] 
-          context: SlackContext
-      - scan-backend:
-          requires: [build-backend]
-          context: SlackContext
-      - scan-frontend:
-          requires: [build-frontend]
-          context: SlackContext
-      #- deploy-infrastructure:
-      #    requires: [test-frontend, test-backend, scan-frontend, scan-backend]          
-      #- configure_infrastructure:
-      #    requires: [deploy-infrastructure] 
+      - build-frontend
+      - build-backend
+      #- test-frontend:
+      #    requires: [build-frontend]
+      #- test-backend:
+      #    requires: [build-backend]
+      #- scan-frontend:
+      #    requires: [test-frontend]
+      #- scan-backend:
+      #    requires: [test-backend]
+      - deploy-infrastructure:
+          requires: [scan-frontend, scan-backend]
+          filters:
+            branches:
+              only:
+                - master
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migrations]
+      - smoke-test:
+          requires: [deploy-backend, deploy-frontend]
+      - cloudfront-update:
+          requires: [smoke-test]
       
