@@ -21,45 +21,53 @@ commands:
             aws cloudformation delete-stack --stack-name udacityproj3backend-${CIRCLE_WORKFLOW_ID:0:5}
 jobs:
   build-frontend:
+    working_directory: ~/udacitycicd/frontend
     docker:
       - image: circleci/node:13.8.0
     steps:
-      - checkout
+      - checkout:
+          path: ~/udacitycicd
       - restore_cache:
           keys: [frontend-build]
-      - run: npm i ./frontend      
+      - run: npm i
       - save_cache:
           paths: [node_modules]
           key: frontend-build
 
   build-backend:
+    working_directory: ~/udacitycicd/backend
     docker:
       - image: circleci/node:13.8.0
     steps:
-      - checkout
+      - checkout:
+          path: ~/udacitycicd
       - restore_cache:
           keys: [backend-build]
-      - run: npm i ./backend      
+      - run: npm i
       - save_cache:
           paths: [node_modules]
           key: backend-build
   test-frontend:
+      working_directory: ~/udacitycicd/frontend
       docker:
         - image: circleci/node:13.8.0
       steps:
-        - checkout
+        - checkout:
+           path: ~/udacitycicd
         - restore_cache:
             keys: [frontend-build]
-        - run: npm --prefix ./frontend run test
+        - run: npm run test
                   
   test-backend:
+      working_directory: ~/udacitycicd/backend
       docker:
         - image: circleci/node:13.8.0
       steps:
-        - checkout
+        - checkout:
+            path: ~/udacitycicd
         - restore_cache:
             keys: [frontend-build]
-        - run: npm --prefix ./backend run test
+        - run: npm run test
 
   checkoutcode:
     docker:
