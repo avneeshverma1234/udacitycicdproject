@@ -69,6 +69,28 @@ jobs:
             keys: [backend-build1]
         - run: npm run test
 
+  scan-backend:
+      working_directory: ~/udacitycicd/backend
+      docker:
+        - image: circleci/node:13.8.0
+      steps:
+        - checkout:
+            path: ~/udacitycicd
+        - restore_cache:
+            keys: [backend-build1]
+        - run: npm audit --audit-level=critical
+
+  scan-frontend:
+      working_directory: ~/udacitycicd/frontend
+      docker:
+        - image: circleci/node:13.8.0
+      steps:
+        - checkout:
+           path: ~/udacitycicd
+        - restore_cache:
+            keys: [frontend-build1]
+        - run: npm audit --audit-level=critical
+
   checkoutcode:
     docker:
       - image: circleci/node:13.8.0
@@ -168,7 +190,12 @@ workflows:
           requires: [build-frontend] 
       - test-backend:
           requires: [build-backend] 
-      #- deploy-infrastructure          
-      #- configure_infrastructure:
-      #    requires: [deploy-infrastructure] 
+      - scan-backend:
+          requires: [build-backend]
+      - scan-frontend:
+          requires: [build-frontend]
+      - deploy-infrastructure:
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]          
+      - configure-infrastructure:
+          requires: [deploy-infrastructure] 
       
