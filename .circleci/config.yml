@@ -156,7 +156,7 @@ jobs:
               --stack-name udacityproj3cloudfront-${CIRCLE_WORKFLOW_ID:0:5} \
               --region us-east-1 \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:5}-avudaproj3cicd"               
-      - destroy_environments
+      #- destroy_environments
       - persist_to_workspace:
           root: .circleci/ansible
           paths:
@@ -184,7 +184,7 @@ jobs:
           name: Configure server with ansible
           command: |
             ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
-      - destroy_environments
+      #- destroy_environments
   
   run-migrations:
     working_directory: ~/udacitycicd/backend
@@ -199,7 +199,7 @@ jobs:
           name: Run DB Migration
           command: |
             npm run migrations            
-      - destroy_environments
+      #- destroy_environments
       
   deploy-frontend:
     working_directory: ~/udacitycicd/frontend
@@ -231,8 +231,8 @@ jobs:
             npm install webpack-dev-server -g                        
             npm run build            
             aws s3 sync ./dist s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:5}"  --delete
-      - destroy_environments      
-      - revert-migration
+      #- destroy_environments      
+      #- revert-migration
   
   deploy-backend:
     working_directory: ~/udacitycicd/backend
@@ -257,8 +257,8 @@ jobs:
           command: |
             npm run build    
             ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/deploy-backend.yml                                
-      - destroy_environments      
-      - revert-migration
+      #- destroy_environments      
+      #- revert-migration
     
   smoke-test:
     docker:
