@@ -4,8 +4,8 @@
   apt:
     upgrade: "yes"
     state: fixed
-- name: install nvm
-  shell: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh 
+#- name: install nvm
+#  shell: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh 
 
 - name: "install dependencies."
   become: true
