@@ -142,7 +142,7 @@ jobs:
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:5}"                     
       - run:
           name: Add back-end ip to ansible inventory
-          command: |            
+          command: |                        
             aws ec2 describe-instances \
             --filters  Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:5}" \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
@@ -237,10 +237,10 @@ jobs:
     steps:
       - checkout:
           path: ~/udacitycicd
-      - attach_workspace:
-          at: ~/udacitycicd/.circleci/ansible
-      - restore_cache:
-            keys: [backend-build1]
+      #- attach_workspace:
+      #    at: ~/udacitycicd/.circleci/ansible
+      #- restore_cache:
+      #      keys: [backend-build1]
       - add_ssh_keys:
           fingerprints: ["02:e5:d6:ad:c5:5e:b3:c5:8e:60:a4:27:af:ce:ad:7b"]
       - run:
