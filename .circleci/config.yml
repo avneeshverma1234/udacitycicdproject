@@ -209,12 +209,12 @@ jobs:
           path: ~/udacitycicd
       - restore_cache:
             keys: [frontend-build1]
-      - run:
-          name: Install dependencies
-          command: |
-            sudo apt-get update
-            sudo apt-get -y install tar gzip ansible curl python           
-            pip install awscli
+     # - run:
+     #     name: Install dependencies
+     #     command: |
+      #      sudo apt-get update
+      #      sudo apt-get -y install tar gzip ansible curl python           
+      #      pip install awscli
       - run:
           name: Get backend url
           command: |
@@ -244,12 +244,12 @@ jobs:
             keys: [backend-build1]
       - add_ssh_keys:
           fingerprints: ["02:e5:d6:ad:c5:5e:b3:c5:8e:60:a4:27:af:ce:ad:7b"]
-      - run:
-          name: Install dependencies
-          command: |
-            sudo apt-get update
-            sudo apt-get -y install tar gzip ansible curl python           
-            pip install awscli
+      #- run:
+      #    name: Install dependencies
+      #    command: |
+      #      sudo apt-get update
+      #      sudo apt-get -y install tar gzip ansible curl python            
+      #      pip install awscli
       - run:
           name: Build and deploy backend
           no_output_timeout: 30m
@@ -342,14 +342,14 @@ workflows:
     #        branches:
     #          only:
     #            - main
-    #  - configure-infrastructure
+      - configure-infrastructure
       #    requires: [build-frontend, build-backend]
     #  - run-migrations:
     #        requires: [configure-infrastructure]
-      - deploy-frontend
-    #      requires: [run-migrations]
-      - deploy-backend
-    #      requires: [run-migrations]
+      - deploy-frontend:
+          requires: [configure-infrastructure]
+      - deploy-backend:
+          requires: [configure-infrastructure]
       - smoke-test:
             requires: [deploy-backend, deploy-frontend]
       #- cloudfront-update:

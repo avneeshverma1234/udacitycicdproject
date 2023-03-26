@@ -14,11 +14,10 @@
   args:
     executable: /bin/bash
 
-#- name: install nvm
-#  shell: /bin/bash -c "source ~/.nvm/nvm.sh && nvm install v12.0.0 && nvm alias default v12.0.0"
-
-#- name: install node
-#  shell: nvm install v12.0.0
+- name: install aws cli
+  become: true
+  become_user: root
+  shell: pip install awscli  
 
 - name: "install npm."
   become: true
