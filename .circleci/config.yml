@@ -227,10 +227,15 @@ jobs:
       - run:
           name: Deploy frontend objects
           command: |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:5}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            export API_URL=http://54.86.193.72:3030
             sudo npm install webpack-dev-server -g   
             echo "${API_URL}"                     
             npm run build            
-            aws s3 sync ./dist s3://udapeople-udapeople-8139d  --delete
+            aws s3 sync ./dist s3://udapeople-8139d  --delete
       #- destroy_environments      
       #- revert-migration
   
