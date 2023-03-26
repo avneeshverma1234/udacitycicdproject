@@ -4,19 +4,12 @@
   apt:
     upgrade: "yes"
     state: fixed
+- name: install nvm
+  shell: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | | sudo -E bash - && sudo source ~/.bashrc
 
 - name: install node
-  shell: curl -fsSL https://deb.nodesource.com/setup_12.x | sudo -E bash - && sudo apt-get install -y nodejs
-
-- name: Sleep Playbook  
-  gather_facts: no
-  tasks:
-    -  name: Sleep for 150 seconds and timeout
-       tags: sleep150
-       wait_for:
-        delay: 150
-        timeout: 0
-
+  shell: nvm install v12.0.0
+  
 - name: "install npm."
   become: true
   apt:
