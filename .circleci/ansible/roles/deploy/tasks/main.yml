@@ -2,7 +2,7 @@
 - name: "copy backend folder"
   become: true
   copy:
-    src: /root/udacitycicd/backend
+    src: ~/udacitycicd/backend
     dest: /home/ubuntu
 
 - name: Running backend service
