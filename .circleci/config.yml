@@ -227,7 +227,7 @@ jobs:
       - run:
           name: Deploy frontend objects
           command: |
-            npm install webpack-dev-server -g                        
+            sudo npm install webpack-dev-server -g                        
             npm run build            
             aws s3 sync ./dist s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:5}"  --delete
       #- destroy_environments      
