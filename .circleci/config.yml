@@ -252,6 +252,7 @@ jobs:
           name: Build backend
           no_output_timeout: 30m
           command: |
+            npm install
             npm run build    
       - run:
           name: display inventory file
