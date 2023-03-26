@@ -17,7 +17,7 @@
 - name: install aws cli
   become: true
   become_user: root
-  shell: pip install awscli  
+  shell: pip3 install awscli  
 
 - name: "install npm."
   become: true
