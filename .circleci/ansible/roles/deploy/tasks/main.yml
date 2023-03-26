@@ -1,35 +1,9 @@
 ---
-- name: "upgrade packages."
-  become: true
-  apt:
-    upgrade: "yes"
-
-
-#- name: "install dependencies."
-#  become: true
-#  apt:
-#    name: ["nodejs", "npm", "tar"]
-#    state: latest
-#    update_cache: yes
-- name: install node
-  shell: curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash - && sudo apt-get install -y nodejs
-  
 - name: "copy backend folder"
   become: true
   copy:
-    src: /root/project/backend
+    src: /root/udacitycicd/backend
     dest: /home/ubuntu
-
-
-- name: Install Node Dependencies
-  shell: |
-    cd /home/ubuntu/backend
-    npm install
-
-- name: Building backend service
-  shell: |
-    cd /home/ubuntu/backend
-    npm run build
 
 - name: Running backend service
   shell: |

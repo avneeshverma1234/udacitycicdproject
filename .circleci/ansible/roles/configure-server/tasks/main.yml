@@ -6,7 +6,7 @@
     state: fixed
 
 - name: install node
-  shell: curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash - && sudo apt-get install -y nodejs
+  shell: curl -fsSL https://deb.nodesource.com/setup_12.x | sudo -E bash - && sudo apt-get install -y nodejs
 
 - name: "install npm."
   become: true
