@@ -7,11 +7,18 @@
 - name: install nvm
   shell: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh 
 
-- name: install nvm
-  shell: sudo bash && source ~/.bashrc
-  
-- name: install node
-  shell: nvm install v12.0.0
+- name: Install node and set version
+  become: true
+  become_user: root
+  shell: "source /root/.nvm/nvm.sh && nvm install 12.0.0" 
+  args:
+    executable: /bin/bash
+
+#- name: install nvm
+#  shell: /bin/bash -c "source ~/.nvm/nvm.sh && nvm install v12.0.0 && nvm alias default v12.0.0"
+
+#- name: install node
+#  shell: nvm install v12.0.0
 
 - name: "install npm."
   become: true
