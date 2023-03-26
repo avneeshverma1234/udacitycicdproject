@@ -1,7 +1,7 @@
 ---
-- name: "wait 600 sec"
-  wait_for_connection:
-  
+#- name: "wait 600 sec"
+#  wait_for_connection:
+
 - name: "copy backend folder"
   become: true
   copy:
