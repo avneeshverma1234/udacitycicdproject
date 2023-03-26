@@ -222,11 +222,11 @@ jobs:
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:5}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
-            export API_URL=http://54.86.193.72:3030
+            export API_URL=http://${BACKEND_IP}:3030
             sudo npm install webpack-dev-server -g   
             echo "${API_URL}"                     
             npm run build            
-            aws s3 sync ./dist s3://udapeople-8139d  --delete
+            aws s3 sync ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:5}  --delete
       #- destroy_environments      
       #- revert-migration
   
@@ -325,8 +325,8 @@ workflows:
   #        context: SlackContext
   default:
     jobs:      
-    #  - build-frontend
-    #  - build-backend
+      - build-frontend
+      - build-backend
      # - test-frontend:
      #     requires: [build-frontend]
      # - test-backend:
@@ -337,22 +337,22 @@ workflows:
     #  - scan-backend:
     #      context: SlackContext
     #      requires: [test-backend]
-    #  - deploy-infrastructure:
-    #     requires: [build-frontend, build-backend]
-    #     filters:
-    #        branches:
-    #          only:
-    #            - main
-    #  - configure-infrastructure
-      #    requires: [build-frontend, build-backend]
-    #  - run-migrations:
-    #        requires: [configure-infrastructure]
-    #  - deploy-frontend
-    #      requires: [configure-infrastructure]
-      - deploy-backend
-    #      requires: [configure-infrastructure]
-    #  - smoke-test:
-    #        requires: [deploy-backend, deploy-frontend]
+      - deploy-infrastructure:
+         requires: [build-frontend, build-backend]
+         filters:
+            branches:
+              only:
+                - main
+      - configure-infrastructure:
+          requires: [build-frontend, build-backend]
+      - run-migrations:
+            requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [configure-infrastructure]
+      - deploy-backend:
+          requires: [configure-infrastructure]
+      - smoke-test:
+           requires: [deploy-backend, deploy-frontend]
       #- cloudfront-update:
       #      requires: [smoke-test]
       
