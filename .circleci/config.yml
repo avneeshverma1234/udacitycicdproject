@@ -142,7 +142,8 @@ jobs:
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:5}"                     
       - run:
           name: Add back-end ip to ansible inventory
-          command: |                        
+          command: | 
+            echo "\n" >>  .circleci/ansible/inventory.txt                     
             aws ec2 describe-instances \
             --filters  Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:5}" \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
@@ -237,8 +238,8 @@ jobs:
     steps:
       - checkout:
           path: ~/udacitycicd
-      #- attach_workspace:
-      #    at: ~/udacitycicd/.circleci/ansible
+      - attach_workspace:
+          at: ~/udacitycicd/.circleci/ansible
       #- restore_cache:
       #      keys: [backend-build1]
       - add_ssh_keys:
@@ -331,8 +332,8 @@ workflows:
   #        context: SlackContext
   default:
     jobs:      
-     # - build-frontend
-     # - build-backend
+      - build-frontend
+      - build-backend
      # - test-frontend:
      #     requires: [build-frontend]
      # - test-backend:
@@ -343,20 +344,20 @@ workflows:
     #  - scan-backend:
     #      context: SlackContext
     #      requires: [test-backend]
-     # - deploy-infrastructure:
-     #    requires: [build-frontend, build-backend]
-     #    filters:
-     #       branches:
-     #         only:
-     #           - main
-     # - configure-infrastructure:
-     #     requires: [deploy-infrastructure]
-     # - run-migrations:
-     #       requires: [configure-infrastructure]
-     # - deploy-frontend:
-     #     requires: [configure-infrastructure]
-      - deploy-backend
-     #     requires: [configure-infrastructure]
+      - deploy-infrastructure:
+         requires: [build-frontend, build-backend]
+         filters:
+            branches:
+              only:
+                - main
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
+      - run-migrations:
+            requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [configure-infrastructure]
+      - deploy-backend:
+          requires: [configure-infrastructure]
       - smoke-test:
            requires: [deploy-backend]
       #- cloudfront-update:
