@@ -169,8 +169,7 @@ jobs:
     docker:
       - image: python:3.7-alpine3.11
     steps:
-      - checkout:
-          path: ~/udacitycicd
+      - checkout          
       - add_ssh_keys:
           fingerprints: ["02:e5:d6:ad:c5:5e:b3:c5:8e:60:a4:27:af:ce:ad:7b"] # You can get this ID in the section where you registered the SSH Key
       - attach_workspace:
@@ -256,7 +255,7 @@ jobs:
           no_output_timeout: 30m
           command: |
             npm run build    
-            ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/deploy-backend.yml                                
+            ansible-playbook -i ~/udacitycicd/.circleci/ansible/inventory.txt ~/udacitycicd/.circleci/ansible/deploy-backend.yml                                
       #- destroy_environments      
       #- revert-migration
     
