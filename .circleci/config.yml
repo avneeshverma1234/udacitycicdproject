@@ -237,6 +237,8 @@ jobs:
     steps:
       - checkout:
           path: ~/udacitycicd
+      - attach_workspace:
+          at: ~/udacitycicd/.circleci/ansible
       - restore_cache:
             keys: [backend-build1]
       - add_ssh_keys:
@@ -252,6 +254,10 @@ jobs:
           no_output_timeout: 30m
           command: |
             npm run build    
+      - run:
+          name: display inventory file
+          command: |
+            cat ~/udacitycicd/.circleci/ansible/inventory.txt
       - run:
           name: deploy backend
           no_output_timeout: 30m
