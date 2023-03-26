@@ -213,7 +213,7 @@ jobs:
           name: Install dependencies
           command: |
             sudo apt-get update
-            sudo apt-get -y install tar gzip ansible curl            
+            sudo apt-get -y install tar gzip ansible curl python           
             pip install awscli
       - run:
           name: Get backend url
@@ -248,7 +248,7 @@ jobs:
           name: Install dependencies
           command: |
             sudo apt-get update
-            sudo apt-get -y install tar gzip ansible curl            
+            sudo apt-get -y install tar gzip ansible curl python           
             pip install awscli
       - run:
           name: Build and deploy backend
@@ -297,7 +297,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update nodejs npm curl
+            apk add --update nodejs npm curl python
             pip install awscli
       - run:
           name: Promote CloudFront distribution and clean up old resources
@@ -342,14 +342,14 @@ workflows:
     #        branches:
     #          only:
     #            - main
-      - configure-infrastructure
+    #  - configure-infrastructure
       #    requires: [build-frontend, build-backend]
-      - run-migrations:
-            requires: [configure-infrastructure]
-      - deploy-frontend:
-          requires: [run-migrations]
-      - deploy-backend:
-          requires: [run-migrations]
+    #  - run-migrations:
+    #        requires: [configure-infrastructure]
+      - deploy-frontend
+    #      requires: [run-migrations]
+      - deploy-backend
+    #      requires: [run-migrations]
       - smoke-test:
             requires: [deploy-backend, deploy-frontend]
       #- cloudfront-update:
