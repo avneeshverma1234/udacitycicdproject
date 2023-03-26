@@ -257,10 +257,14 @@ jobs:
             sudo apt-get -y install tar gzip ansible curl python python3-pip          
             pip3 install awscli
       - run:
-          name: Build and deploy backend
+          name: Build backend
           no_output_timeout: 30m
           command: |
             npm run build    
+      - run:
+          name: deploy backend
+          no_output_timeout: 30m
+          command: |            
             ansible-playbook -i ~/udacitycicd/.circleci/ansible/inventory.txt ~/udacitycicd/.circleci/ansible/deploy-backend.yml                                
       #- destroy_environments      
       #- revert-migration
@@ -352,7 +356,7 @@ workflows:
       #    requires: [build-frontend, build-backend]
     #  - run-migrations:
     #        requires: [configure-infrastructure]
-      - deploy-frontend
+    #  - deploy-frontend
     #      requires: [configure-infrastructure]
       - deploy-backend
     #      requires: [configure-infrastructure]
