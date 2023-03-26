@@ -233,7 +233,7 @@ jobs:
   deploy-backend:
     working_directory: ~/udacitycicd/backend
     docker:
-      - image: circleci/node:13.8.0
+      - image: python:3.7-alpine3.11
     steps:
       - checkout:
           path: ~/udacitycicd
@@ -247,7 +247,7 @@ jobs:
           name: Install dependencies
           command: |
             sudo apt-get update
-            sudo apt-get -y install tar gzip ansible curl python python3-pip          
+            sudo apt-get -y install tar gzip ansible curl python python3-pip nodejs npm         
             pip3 install awscli
       - run:
           name: Build backend
@@ -331,8 +331,8 @@ workflows:
   #        context: SlackContext
   default:
     jobs:      
-      - build-frontend
-      - build-backend
+     # - build-frontend
+     # - build-backend
      # - test-frontend:
      #     requires: [build-frontend]
      # - test-backend:
@@ -343,20 +343,20 @@ workflows:
     #  - scan-backend:
     #      context: SlackContext
     #      requires: [test-backend]
-      - deploy-infrastructure:
-         requires: [build-frontend, build-backend]
-         filters:
-            branches:
-              only:
-                - main
-      - configure-infrastructure:
-          requires: [deploy-infrastructure]
-      - run-migrations:
-            requires: [configure-infrastructure]
-      - deploy-frontend:
-          requires: [configure-infrastructure]
-      - deploy-backend:
-          requires: [configure-infrastructure]
+    #  - deploy-infrastructure:
+    #     requires: [build-frontend, build-backend]
+    #     filters:
+    #        branches:
+    #          only:
+    #            - main
+    #  - configure-infrastructure:
+    #      requires: [deploy-infrastructure]
+    #  - run-migrations:
+    #        requires: [configure-infrastructure]
+    #  - deploy-frontend:
+    #      requires: [configure-infrastructure]
+      - deploy-backend
+      #    requires: [configure-infrastructure]
       - smoke-test:
            requires: [deploy-backend, deploy-frontend]
       #- cloudfront-update:
