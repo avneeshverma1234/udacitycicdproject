@@ -8,8 +8,7 @@
 - name: install node
   shell: curl -fsSL https://deb.nodesource.com/setup_12.x | sudo -E bash - && sudo apt-get install -y nodejs
 
-- name: Sleep Playbook
-  hosts: app
+- name: Sleep Playbook  
   gather_facts: no
   tasks:
     -  name: Sleep for 150 seconds and timeout
