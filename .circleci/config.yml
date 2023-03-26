@@ -256,7 +256,7 @@ jobs:
           name: deploy backend
           no_output_timeout: 30m
           command: |            
-            ansible-playbook -i ~/udacitycicd/.circleci/ansible/inventory.txt ~/udacitycicd/.circleci/ansible/deploy-backend.yml                                
+            ansible-playbook -i ~/udacitycicd/.circleci/ansible/inventory.txt -vvv ~/udacitycicd/.circleci/ansible/deploy-backend.yml -f1                                
       #- destroy_environments      
       #- revert-migration
     
