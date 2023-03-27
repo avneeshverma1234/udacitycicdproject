@@ -16,13 +16,7 @@ commands:
     steps:
       - slack/notify:
           event: fail
-          template: basic_fail_1
-
-  notify_slack_pass:
-    steps:
-      - slack/notify:
-          event: pass
-          template: basic_success_1
+          template: basic_fail_1  
 
   revert-migration: 
     description: Revert the last migration if successfully run in the current workflow.
@@ -49,8 +43,7 @@ jobs:
       - save_cache:
           paths: [node_modules]
           key: frontend-build1
-      - notify_slack_error
-      - notify_slack_pass
+      - notify_slack_error      
   build-backend:
     working_directory: ~/udacitycicd/backend
     docker:
@@ -65,8 +58,7 @@ jobs:
       - save_cache:
           paths: [node_modules]
           key: backend-build1
-      - notify_slack_error
-      - notify_slack_pass
+      - notify_slack_error      
   test-frontend:
       working_directory: ~/udacitycicd/frontend
       docker:
@@ -77,8 +69,7 @@ jobs:
         - restore_cache:
             keys: [frontend-build1]
         - run: npm run test
-        - notify_slack_error
-        - notify_slack_pass          
+        - notify_slack_error        
   test-backend:
       working_directory: ~/udacitycicd/backend
       docker:
@@ -89,8 +80,7 @@ jobs:
         - restore_cache:
             keys: [backend-build1]
         - run: npm run test
-        - notify_slack_error
-        - notify_slack_pass
+        - notify_slack_error        
 
   scan-backend:
       working_directory: ~/udacitycicd/backend
@@ -110,8 +100,7 @@ jobs:
         - save_cache:
             paths: [node_modules]
             key: backend-build1
-        - notify_slack_error
-        - notify_slack_pass
+        - notify_slack_error        
   scan-frontend:
       working_directory: ~/udacitycicd/frontend
       docker:
@@ -123,8 +112,7 @@ jobs:
             keys: [frontend-build1]
         - run: npm audit fix --audit-level=critical --force
         - run: npm audit --audit-level=critical
-        - notify_slack_error
-        - notify_slack_pass
+        - notify_slack_error        
          
   deploy-infrastructure:
     docker:
@@ -187,8 +175,7 @@ jobs:
           name: display inventory file
           command: |
             cat .circleci/ansible/inventory.txt 
-      - notify_slack_error
-      - notify_slack_pass       
+      - notify_slack_error      
   configure-infrastructure:
     docker:
       - image: python:3.7-alpine3.11
@@ -208,8 +195,7 @@ jobs:
           command: |
             ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
       - destroy_environments
-      - notify_slack_error
-      - notify_slack_pass
+      - notify_slack_error      
   run-migrations:
     working_directory: ~/udacitycicd/backend
     docker:
@@ -224,8 +210,7 @@ jobs:
           command: |
             npm run migrations            
       - destroy_environments
-      - notify_slack_error
-      - notify_slack_pass
+      - notify_slack_error      
   deploy-frontend:
     working_directory: ~/udacitycicd/frontend
     docker:
@@ -255,8 +240,7 @@ jobs:
             aws s3 sync ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:5}  --delete
       - destroy_environments      
       - revert-migration
-      - notify_slack_error
-      - notify_slack_pass
+      - notify_slack_error      
   deploy-backend:
     working_directory: ~/udacitycicd/backend
     docker:
@@ -290,8 +274,7 @@ jobs:
             ansible-playbook -i ~/udacitycicd/.circleci/ansible/inventory.txt ~/udacitycicd/.circleci/ansible/deploy-backend.yml -f1                                
       - destroy_environments      
       - revert-migration
-      - notify_slack_error
-      - notify_slack_pass
+      - notify_slack_error      
   smoke-test:
     docker:
       - image: python:3.7-alpine3.11
@@ -320,8 +303,7 @@ jobs:
             else
               return 1
             fi
-      - notify_slack_error
-      - notify_slack_pass
+      - notify_slack_error      
   cloudfront-update:
     docker:
       - image: python:3.7-alpine3.11
@@ -352,8 +334,7 @@ jobs:
               echo "This is the bucket url: "
               echo "s3://udapeople-${OldWorkflowID}"
             fi 
-      - notify_slack_error
-      - notify_slack_pass                
+      - notify_slack_error      
 workflows:
   #send-notification:
   #  jobs:
