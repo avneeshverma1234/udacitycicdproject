@@ -336,11 +336,12 @@ workflows:
   #    - notify:
   #        context: SlackContext
   default:
-    jobs:      
-      #- build-frontend:
-      #    context: SlackContext
+    jobs:            
       - build-backend:
           context: SlackContext
+      - build-frontend:
+          context: SlackContext
+          requires: [build-backend]
      # - test-frontend:
      #     requires: [build-frontend]
      # - test-backend:
