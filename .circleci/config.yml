@@ -96,7 +96,7 @@ jobs:
   scan-backend:
       working_directory: ~/udacitycicd/backend
       docker:
-        - image: circleci/node:13.8.0
+        - image: cimg/node:13.8.0
       steps:
         - checkout:
             path: ~/udacitycicd
@@ -108,6 +108,9 @@ jobs:
               npm install
               npm audit fix --audit-level=critical --force
               npm audit --audit-level=critical 
+        - save_cache:
+            paths: [node_modules]
+            key: backend-build1
         - notify_slack_error
         - notify_slack_pass
   scan-frontend:
