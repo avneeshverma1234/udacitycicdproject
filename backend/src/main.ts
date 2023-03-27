@@ -15,6 +15,7 @@ async function bootstrap() {
   logger.info(`NodeJs Version ${process.version}`);
   logger.info(JSON.stringify(process.env));
   const server = express();
+  asdadad// fail here
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server), {
     logger,
   });
