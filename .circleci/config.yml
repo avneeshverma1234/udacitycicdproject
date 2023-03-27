@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  slack: circleci/slack@4.3.0
+  slack: circleci/slack@4.12.1
 commands:
   destroy_environments:
     steps:
@@ -30,14 +30,10 @@ commands:
       - run:
           name: Revert migrations
           when: on_fail
-          command: |
-            SUCCESS=$(curl -H "token: 46379a95-9d53-46f2-becb-d0e5c670441f" --request GET https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID})
-            if (( $SUCCESS == 1 ));
-            then
+          command: |            
               cd ~/project/backend
               npm install
-              npm run migration:revert
-            fi           
+              npm run migration:revert  
 jobs:
   build-frontend:
     working_directory: ~/udacitycicd/frontend
@@ -49,6 +45,7 @@ jobs:
       - restore_cache:
           keys: [frontend-build1]
       - run: npm i
+      - run: npm run build
       - save_cache:
           paths: [node_modules]
           key: frontend-build1
@@ -68,9 +65,8 @@ jobs:
       - save_cache:
           paths: [node_modules]
           key: backend-build1
-      - slack/notify:            
-            event: fail
-            template: basic_fail_1
+      - notify_slack_error
+      - notify_slack_pass
   test-frontend:
       working_directory: ~/udacitycicd/frontend
       docker:
@@ -81,7 +77,8 @@ jobs:
         - restore_cache:
             keys: [frontend-build1]
         - run: npm run test
-                  
+        - notify_slack_error
+        - notify_slack_pass          
   test-backend:
       working_directory: ~/udacitycicd/backend
       docker:
@@ -92,6 +89,8 @@ jobs:
         - restore_cache:
             keys: [backend-build1]
         - run: npm run test
+        - notify_slack_error
+        - notify_slack_pass
 
   scan-backend:
       working_directory: ~/udacitycicd/backend
@@ -122,11 +121,10 @@ jobs:
            path: ~/udacitycicd
         - restore_cache:
             keys: [frontend-build1]
-        #- run: npm audit fix --audit-level=critical --force
-        #- run: npm audit --audit-level=critical
-        - slack/notify:            
-            event: fail
-            template: basic_fail_1
+        - run: npm audit fix --audit-level=critical --force
+        - run: npm audit --audit-level=critical
+        - notify_slack_error
+        - notify_slack_pass
          
   deploy-infrastructure:
     docker:
@@ -171,16 +169,16 @@ jobs:
             --filters  Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:5}" \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --output text >> .circleci/ansible/inventory.txt           
-      #- run:
-      #    name: Ensure CloudFront infrastructure exist
-      #    command: |
-      #      aws cloudformation deploy \
-      #        --template-file .circleci/files/cloudfront.yml \
-      #        --tags project=udacitycdcloudfront \
-       #       --stack-name udacityproj3cloudfront-${CIRCLE_WORKFLOW_ID:0:5} \
-       #       --region us-east-1 \
-       #       --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:5}-avudaproj3cicd"               
-      #- destroy_environments
+      - run:
+          name: Ensure CloudFront infrastructure exist
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --tags project=udacitycdcloudfront \
+              --stack-name udacityproj3cloudfront-${CIRCLE_WORKFLOW_ID:0:5} \
+              --region us-east-1 \
+              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:5}-avudaproj3cicd"               
+      - destroy_environments
       - persist_to_workspace:
           root: .circleci/ansible
           paths:
@@ -188,7 +186,9 @@ jobs:
       - run:
           name: display inventory file
           command: |
-            cat .circleci/ansible/inventory.txt        
+            cat .circleci/ansible/inventory.txt 
+      - notify_slack_error
+      - notify_slack_pass       
   configure-infrastructure:
     docker:
       - image: python:3.7-alpine3.11
@@ -207,8 +207,9 @@ jobs:
           name: Configure server with ansible
           command: |
             ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
-      #- destroy_environments
-  
+      - destroy_environments
+      - notify_slack_error
+      - notify_slack_pass
   run-migrations:
     working_directory: ~/udacitycicd/backend
     docker:
@@ -222,8 +223,9 @@ jobs:
           name: Run DB Migration
           command: |
             npm run migrations            
-      #- destroy_environments
-      
+      - destroy_environments
+      - notify_slack_error
+      - notify_slack_pass
   deploy-frontend:
     working_directory: ~/udacitycicd/frontend
     docker:
@@ -251,9 +253,10 @@ jobs:
             echo "${API_URL}"                     
             npm run build            
             aws s3 sync ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:5}  --delete
-      #- destroy_environments      
-      #- revert-migration
-  
+      - destroy_environments      
+      - revert-migration
+      - notify_slack_error
+      - notify_slack_pass
   deploy-backend:
     working_directory: ~/udacitycicd/backend
     docker:
@@ -262,9 +265,7 @@ jobs:
       - checkout:
           path: ~/udacitycicd
       - attach_workspace:
-          at: ~/udacitycicd/.circleci/ansible
-      #- restore_cache:
-      #      keys: [backend-build1]
+          at: ~/udacitycicd/.circleci/ansible      
       - add_ssh_keys:
           fingerprints: ["02:e5:d6:ad:c5:5e:b3:c5:8e:60:a4:27:af:ce:ad:7b"]
       - run:
@@ -287,9 +288,10 @@ jobs:
           no_output_timeout: 30m
           command: |            
             ansible-playbook -i ~/udacitycicd/.circleci/ansible/inventory.txt ~/udacitycicd/.circleci/ansible/deploy-backend.yml -f1                                
-      #- destroy_environments      
-      #- revert-migration
-    
+      - destroy_environments      
+      - revert-migration
+      - notify_slack_error
+      - notify_slack_pass
   smoke-test:
     docker:
       - image: python:3.7-alpine3.11
@@ -318,6 +320,8 @@ jobs:
             else
               return 1
             fi
+      - notify_slack_error
+      - notify_slack_pass
   cloudfront-update:
     docker:
       - image: python:3.7-alpine3.11
@@ -347,7 +351,9 @@ jobs:
               echo udapeople-${OldWorkflowID}
               echo "This is the bucket url: "
               echo "s3://udapeople-${OldWorkflowID}"
-            fi                 
+            fi 
+      - notify_slack_error
+      - notify_slack_pass                
 workflows:
   #send-notification:
   #  jobs:
@@ -356,34 +362,32 @@ workflows:
   default:
     jobs:            
       - build-backend          
-    #  - build-frontend:
-    #      context: SlackContext
-    #      requires: [build-backend]
-     # - test-frontend:
-     #     requires: [build-frontend]
-     # - test-backend:
-     #     requires: [build-backend]
+      - build-frontend          
+      - test-frontend:
+          requires: [build-frontend]
+      - test-backend:
+          requires: [build-backend]
     #  - scan-frontend:
     #      context: SlackContext
     #      requires: [test-frontend]
-      - scan-backend:    
-          requires: [build-backend]
-    #  - deploy-infrastructure:
-    #     requires: [build-frontend, build-backend]
-    #     filters:
-    #        branches:
-    #          only:
-    #            - main
-    #  - configure-infrastructure:
-    #      requires: [deploy-infrastructure]
-    #  - run-migrations:
-    #        requires: [configure-infrastructure]
-    #  - deploy-frontend:
-    #      requires: [configure-infrastructure]
-    #  - deploy-backend:
-    #      requires: [configure-infrastructure]
-    #  - smoke-test:
-    #       requires: [deploy-backend]
-      #- cloudfront-update:
-      #      requires: [smoke-test]
+    #  - scan-backend:    
+    #      requires: [build-backend]
+      - deploy-infrastructure:
+         requires: [build-frontend, build-backend]
+         filters:
+            branches:
+              only:
+                - main
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
+      - run-migrations:
+            requires: [configure-infrastructure]
+      - deploy-frontend:
+          requires: [configure-infrastructure]
+      - deploy-backend:
+          requires: [configure-infrastructure]
+      - smoke-test:
+           requires: [deploy-backend]
+      - cloudfront-update:
+            requires: [smoke-test]
       
