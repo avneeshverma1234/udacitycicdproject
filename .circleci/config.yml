@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  slack: circleci/slack@4.1
+  slack: circleci/slack@4.3.0
 commands:
   destroy_environments:
     steps:
@@ -11,6 +11,18 @@ commands:
            aws cloudformation delete-stack --stack-name udacityproj3frontend-${CIRCLE_WORKFLOW_ID:0:5}
            aws cloudformation delete-stack --stack-name udacityproj3backend-${CIRCLE_WORKFLOW_ID:0:5} 
            aws cloudformation delete-stack --stack-name udacityproj3cloudfront-${CIRCLE_WORKFLOW_ID:0:5}
+
+  notify_slack_error:
+    steps:
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+
+  notify_slack_pass:
+    steps:
+      - slack/notify:
+          event: pass
+          template: basic_success_1
 
   revert-migration: 
     description: Revert the last migration if successfully run in the current workflow.
@@ -40,9 +52,8 @@ jobs:
       - save_cache:
           paths: [node_modules]
           key: frontend-build1
-      - slack/notify:            
-            event: fail
-            template: basic_fail_1
+      - notify_slack_error
+      - notify_slack_pass
   build-backend:
     working_directory: ~/udacitycicd/backend
     docker:
@@ -338,8 +349,7 @@ workflows:
   #        context: SlackContext
   default:
     jobs:            
-      - build-backend:
-          context: SlackContext
+      - build-backend          
       - build-frontend:
           context: SlackContext
           requires: [build-backend]
