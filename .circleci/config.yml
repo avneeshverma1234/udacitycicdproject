@@ -199,16 +199,22 @@ jobs:
   run-migrations:
     working_directory: ~/udacitycicd/backend
     docker:
-      - image: circleci/node
+      - image: cimg/node:13.8.0
     steps:
       - checkout:
           path: ~/udacitycicd
       - restore_cache:
             keys: [backend-build1]
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install awscli -y
       - run: 
           name: Run DB Migration
           command: |
-            npm run migrations            
+            npm run migrations > migrations_dump.txt 2>&1   
+            cat ./migrations_dump.txt         
       - destroy_environments
       - notify_slack_error      
   deploy-frontend:

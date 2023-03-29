@@ -21,4 +21,6 @@
 - name: Running backend service
   shell: |
     cd /home/ubuntu/backend    
+    . ~/.profile
     pm2 start npm --no-automation --name "backend" -- run start
+    echo Backend started.
