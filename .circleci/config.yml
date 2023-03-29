@@ -24,9 +24,7 @@ commands:
       - run:
           name: Revert migrations
           when: on_fail
-          command: |            
-              cd ~/project/backend
-              npm install
+          command: |                                        
               npm run migration:revert  
 jobs:
   build-frontend:
@@ -213,8 +211,7 @@ jobs:
       - run: 
           name: Run DB Migration
           command: |
-            npm run migrations > migrations_dump.txt 2>&1   
-            cat ./migrations_dump.txt         
+            npm run migrations > migrations_dump.txt            
       - destroy_environments
       - notify_slack_error      
   deploy-frontend:
@@ -244,8 +241,7 @@ jobs:
             echo "${API_URL}"                     
             npm run build            
             aws s3 sync ./dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:5}  --delete
-      - destroy_environments      
-      - revert-migration
+      - destroy_environments            
       - notify_slack_error      
   deploy-backend:
     working_directory: ~/udacitycicd/backend
@@ -282,9 +278,12 @@ jobs:
       - revert-migration
       - notify_slack_error      
   smoke-test:
+    working_directory: ~/udacitycicd/backend
     docker:
       - image: python:3.7-alpine3.11
     steps:
+      - checkout:
+          path: ~/udacitycicd
       - run:
           name: Install dependencies
           command: |
