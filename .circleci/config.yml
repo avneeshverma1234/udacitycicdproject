@@ -323,7 +323,7 @@ jobs:
       - notify_slack_error      
   cloudfront-update:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - add_ssh_keys:
@@ -331,26 +331,28 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update nodejs npm curl python
-            pip install awscli
+            sudo apt-get update
+            sudo apt-get install awscli -y
       - run:
-          name: Promote CloudFront distribution and clean up old resources
+          name: Update cloudfront distribution
+          no_output_timeout: 30m
           command: |
-            export OldWorkflowID=$(aws cloudformation \
-              list-exports --query "Exports[?Name==\`WorkflowID:0:5\`].Value" \
-              --no-paginate --output text)
-            export STACKS=$(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-              --stack-status-filter CREATE_COMPLETE --no-paginate --output text)
-            echo Old Workflow Id: "$OldWorkflowID"
-            echo "$STACKS[*]"
-            if echo "$STACKS[*]" | grep -Eq "$OldWorkflowID" 
+            # Fetch workflow ID
+            export CurrentWorkflowID=$(aws cloudformation \
+                      list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+                      --no-paginate --output text)
+            if [[ "" == "${CurrentWorkflowID}" ]]
             then
-              echo "${OldWorkflowID}"
-              echo "This is the bucket: "
-              echo udapeople-${OldWorkflowID}
-              echo "This is the bucket url: "
-              echo "s3://udapeople-${OldWorkflowID}"
-            fi 
+              echo "First time deployment detected."
+              CurrentWorkflowID=${CIRCLE_WORKFLOW_ID:0:5}
+            fi
+            echo "Current Workflow ID: ${CurrentWorkflowID}"            
+            # Enable static website hosting for udapeople-frontend S3 bucket using CloudFront
+            aws cloudformation deploy \
+                      --template-file .circleci/files/cloudfront.yml \
+                      --stack-name "InitialStack-${CurrentWorkflowID}" \
+                      --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:5}" \
+                      --tags project=udapeople
       - notify_slack_error      
 workflows:
   #send-notification:
@@ -378,14 +380,14 @@ workflows:
     #            - main
     #  - configure-infrastructure:
     #      requires: [deploy-infrastructure]
-    #  - run-migrations:
-    #        requires: [build-backend]
+      - run-migrations:
+            requires: [build-backend]
     #  - deploy-frontend:
     #      requires: [configure-infrastructure]
     #  - deploy-backend:
     #      requires: [configure-infrastructure]
-      - smoke-test
+    #  - smoke-test:
     #     requires: [deploy-infrastructure]
-    #  - cloudfront-update:
+    #  - cloudfront-update
     #        requires: [smoke-test]
       
