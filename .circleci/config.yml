@@ -155,16 +155,16 @@ jobs:
             --filters  Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:5}" \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --output text >> .circleci/ansible/inventory.txt           
-      #- run:
-      #    name: Ensure CloudFront infrastructure exist
-      #    command: |
-      #      aws cloudformation deploy \
-      #        --template-file .circleci/files/cloudfront.yml \
-      #        --tags project=udacitycdcloudfront \
-      #        --stack-name udacityproj3cloudfront-${CIRCLE_WORKFLOW_ID:0:5} \
-      #        --region us-east-1 \
-      #        --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:5}-avudaproj3cicd"               
-      #- destroy_environments
+    #  - run:
+    #      name: Ensure CloudFront infrastructure exist
+    #      command: |
+    #        aws cloudformation deploy \
+    #          --template-file .circleci/files/cloudfront.yml \
+    #          --tags project=udacitycdcloudfront \
+    #          --stack-name udacityproj3cloudfront-${CIRCLE_WORKFLOW_ID:0:5} \
+     #         --region us-east-1 \
+     #         --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:5}-avudaproj3cicd"               
+      - destroy_environments
       - persist_to_workspace:
           root: .circleci/ansible
           paths:
@@ -346,14 +346,51 @@ jobs:
               echo "First time deployment detected."
               CurrentWorkflowID=${CIRCLE_WORKFLOW_ID:0:5}
             fi
-            echo "Current Workflow ID: ${CurrentWorkflowID}"            
+            echo "Current Workflow ID: ${CurrentWorkflowID}"   
+            echo "${CurrentWorkflowID}" > ~/project/workflow_id.txt         
             # Enable static website hosting for udapeople-frontend S3 bucket using CloudFront
             aws cloudformation deploy \
                       --template-file .circleci/files/cloudfront.yml \
                       --stack-name "InitialStack-${CurrentWorkflowID}" \
                       --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:5}" \
                       --tags project=udapeople
-      - notify_slack_error      
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/workflow_id.txt
+      - notify_slack_error  
+  cleanup:
+    docker:
+      - image: cimg/node:13.8.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install awscli -y
+      - run:
+          name: Fetch the Old workflow ID and remove related resources
+          command: |
+            # Fetch the Old workflow ID
+            OldWorkflowID=$(cat /tmp/workspace/project/workflow_id.txt)
+            echo OldWorkflowID: "${OldWorkflowID}"
+            echo CIRCLE_WORKFLOW_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
+            # Fetch the stack names          
+            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+                      --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
+            echo Stack names: "${STACKS[@]}"
+            if [[ "${CIRCLE_WORKFLOW_ID:0:7}" != "${OldWorkflowID}" ]]
+            then
+              echo "Delete stack: WorkflowID: ${OldWorkflowID}"
+              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+            else
+              echo "No cleanup for stack: WorkflowID: ${OldWorkflowID}: this is the latest stack"
+            fi    
 workflows:
   #send-notification:
   #  jobs:
@@ -372,22 +409,24 @@ workflows:
     #      requires: [test-frontend]
     #  - scan-backend:    
     #      requires: [build-backend]
-    #  - deploy-infrastructure:
-    #     requires: [test-frontend, test-backend]
-    #     filters:
-    #        branches:
-    #          only:
-    #            - main
-    #  - configure-infrastructure:
-    #      requires: [deploy-infrastructure]
+      - deploy-infrastructure:
+         requires: [test-frontend, test-backend]
+         filters:
+            branches:
+              only:
+                - main
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
       - run-migrations:
             requires: [build-backend]
-    #  - deploy-frontend:
-    #      requires: [configure-infrastructure]
-    #  - deploy-backend:
-    #      requires: [configure-infrastructure]
-    #  - smoke-test:
-    #     requires: [deploy-infrastructure]
-    #  - cloudfront-update
-    #        requires: [smoke-test]
+      - deploy-frontend:
+          requires: [configure-infrastructure]
+      - deploy-backend:
+          requires: [configure-infrastructure]
+      - smoke-test:
+         requires: [deploy-infrastructure]
+      - cloudfront-update:
+            requires: [smoke-test]
+      - cleanup:
+          requires: [cloudfront-update]
       
