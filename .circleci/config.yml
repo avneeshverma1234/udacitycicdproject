@@ -164,7 +164,7 @@ jobs:
       #        --stack-name udacityproj3cloudfront-${CIRCLE_WORKFLOW_ID:0:5} \
       #        --region us-east-1 \
       #        --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:5}-avudaproj3cicd"               
-      - destroy_environments
+      #- destroy_environments
       - persist_to_workspace:
           root: .circleci/ansible
           paths:
@@ -360,22 +360,22 @@ workflows:
     #      requires: [test-frontend]
     #  - scan-backend:    
     #      requires: [build-backend]
-    #  - deploy-infrastructure:
-    #     requires: [test-frontend, test-backend]
-    #     filters:
-    #        branches:
-    #          only:
-    #            - main
+      - deploy-infrastructure:
+         requires: [test-frontend, test-backend]
+         filters:
+            branches:
+              only:
+                - main
     #  - configure-infrastructure:
     #      requires: [deploy-infrastructure]
-      - run-migrations:
-            requires: [build-backend]
+    #  - run-migrations:
+    #        requires: [build-backend]
     #  - deploy-frontend:
     #      requires: [configure-infrastructure]
     #  - deploy-backend:
     #      requires: [configure-infrastructure]
-    #  - smoke-test:
-    #       requires: [deploy-backend]
+      - smoke-test:
+           requires: [deploy-infrastructure]
     #  - cloudfront-update:
     #        requires: [smoke-test]
       
