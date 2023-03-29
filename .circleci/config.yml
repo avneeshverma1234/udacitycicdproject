@@ -292,7 +292,7 @@ jobs:
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --output text)
             echo "${BACKEND_IP}"
-            curl "http://${BACKEND_IP}:3030/api/status"
+            curl "http://${BACKEND_IP1}:3030/api/status"
       - run:
           name: Smoke test frontend
           command: |
@@ -303,6 +303,8 @@ jobs:
             else
               return 1
             fi
+      - destroy_environments      
+      - revert-migration
       - notify_slack_error      
   cloudfront-update:
     docker:
